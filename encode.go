@@ -28,10 +28,12 @@ func Marshal(v interface{}) ([]byte, error) {
 		keys.Index(i).Set(reflectedKey)
 	}
 
+	var isString bool
 	switch k := keys.Interface().(type) {
 	case []int:
 		sort.Ints(k)
 	case []string:
+		isString = true
 		sort.Strings(k)
 	case []float64:
 		sort.Float64s(k)
@@ -49,9 +51,15 @@ func Marshal(v interface{}) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		buffer.Write([]byte(`"`))
-		buffer.Write(bytes.Replace(keyMarshalled, []byte(`"`), []byte(`\\"`), -1))
-		buffer.Write([]byte(`"`))
+
+		if !isString {
+			buffer.Write([]byte(`"`))
+
+			buffer.Write(bytes.Replace(keyMarshalled, []byte(`"`), []byte(`\\"`), -1))
+			buffer.Write([]byte(`"`))
+		} else {
+			buffer.Write(keyMarshalled)
+		}
 		buffer.Write([]byte(":"))
 		valueMarshalled, err := Marshal(reflected.MapIndex(keys.Index(i)).Interface())
 		if err != nil {
